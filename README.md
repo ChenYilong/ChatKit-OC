@@ -62,8 +62,6 @@ git clone --depth=1 https://github.com/leancloud/ChatKit-OC
 - 音视频消息的录制和发送，需要对系统以及 LeanCloud 实时通信 API 比较熟悉；
 - 推、拉展示本对话中的最新消息，需要对 LeanCloud 实时通信接口比较熟悉；
 
-
-
 - 最近联系人
 - 语音消息，根据语音长度调整宽度
 - 图片消息，尺寸自适应 
@@ -77,7 +75,6 @@ git clone --depth=1 https://github.com/leancloud/ChatKit-OC
 ![https://github.com/ChenYilong](https://ww1.sinaimg.cn/mw1024/64dfd849jw1f77azzgfmmg20bl0kl1ky.gif)
 ![https://github.com/ChenYilong](https://ww3.sinaimg.cn/mw1024/64dfd849jw1f77b2ne76xg20bl0klkjr.gif)
 ![https://github.com/ChenYilong](https://ww2.sinaimg.cn/mw1024/64dfd849jw1f77b3wfkuyg20br0krqve.gif)
-
 
 
 ## 项目结构
