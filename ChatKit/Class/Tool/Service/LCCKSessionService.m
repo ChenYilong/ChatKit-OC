@@ -162,6 +162,19 @@ NSString *const LCCKSessionServiceErrorDomain = @"LCCKSessionServiceErrorDomain"
     [NSNotificationCenter.defaultCenter postNotificationName:LCCKNotificationSessionResumed object:nil];
 }
 
+- (void)imClientClosed:(AVIMClient *)imClient error:(NSError *)error
+{
+    [self updateConnectStatus];
+    [imClient openWithOption:AVIMClientOpenOptionReopen callback:^(BOOL succeeded, NSError * _Nullable error) {
+        [self updateConnectStatus];
+        if (succeeded) {
+            [NSNotificationCenter.defaultCenter postNotificationName:LCCKNotificationSessionResumed object:nil];
+        } else {
+            LCCKLog(@"%@", error.description);
+        }
+    }];
+}
+
 - (void)handleSingleSignOnError:(NSError *)aError callback:(LCCKBooleanResultBlock)aCallback {
     if (aError.code == 4111) {
         [self resetService];
@@ -217,13 +230,21 @@ NSString *const LCCKSessionServiceErrorDomain = @"LCCKSessionServiceErrorDomain"
 - (void)updateConnectStatus {
     /* for better UI presentation */
     ///
-    if (_client.status == AVIMClientStatusPaused ||
-        _client.status == AVIMClientStatusResuming) {
+    AVIMClientStatus status = _client.status;
+    if (status == AVIMClientStatusOpening ||
+        status == AVIMClientStatusResuming ||
+        status == AVIMClientStatusClosing) {
         return;
     }
     ///
-    self.connect = _client.status == AVIMClientStatusOpened;
-    [[NSNotificationCenter defaultCenter] postNotificationName:LCCKNotificationConnectivityUpdated object:@(self.connect)];
+    BOOL oldIsOpened = self.connect;
+    if ((oldIsOpened && (status == AVIMClientStatusOpened)) ||
+        (!oldIsOpened && (status == AVIMClientStatusPaused || status == AVIMClientStatusClosed))) {
+        return;
+    }
+    BOOL newIsOpened = (status == AVIMClientStatusOpened);
+    self.connect = newIsOpened;
+    [[NSNotificationCenter defaultCenter] postNotificationName:LCCKNotificationConnectivityUpdated object:@(newIsOpened)];
 }
 
 #pragma mark - signature

@@ -56,9 +56,12 @@ static CGFloat const LCCKScrollViewInsetTop = 20.f;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     // KVO注册监听
     [self addObserver:self forKeyPath:@"loadingMoreMessage" options:NSKeyValueObservingOptionNew context:LCCKBaseConversationViewControllerRefreshContext];
-    __unsafe_unretained __typeof(self) weakSelf = self;
+    __weak __typeof(self) weakSelf = self;
     [self cyl_executeAtDealloc:^{
-        [weakSelf removeObserver:weakSelf forKeyPath:@"loadingMoreMessage"];
+        NSObject *ss = weakSelf;
+        if (ss) {
+            [ss removeObserver:ss forKeyPath:@"loadingMoreMessage"];
+        }
     }];
     [LCCKCellRegisterController registerChatMessageCellClassForTableView:self.tableView];
 //    [self setTableViewInsetsWithBottomValue:kLCCKChatBarMinHeight];
@@ -136,6 +139,18 @@ static CGFloat const LCCKScrollViewInsetTop = 20.f;
             scrollBottomBlock();
         }
         
+    }
+}
+
+- (void)newScrollToBottomAnimated:(BOOL)animated {
+    if (!self.allowScrollToBottom) {
+        return;
+    }
+    NSInteger rows = [self.tableView numberOfRowsInSection:0];
+    if (rows > 0) {
+        [self.tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:rows - 1 inSection:0]
+                              atScrollPosition:UITableViewScrollPositionBottom
+                                      animated:animated];
     }
 }
 

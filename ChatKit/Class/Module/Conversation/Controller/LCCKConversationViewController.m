@@ -206,9 +206,12 @@ NSString *const LCCKConversationViewControllerErrorDomain = @"LCCKConversationVi
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    __unsafe_unretained __typeof(self) weakSelf = self;
+    __weak __typeof(self) weakSelf = self;
     [self cyl_executeAtDealloc:^{
-        !weakSelf.viewControllerWillDeallocBlock ?: weakSelf.viewControllerWillDeallocBlock(weakSelf);
+        LCCKConversationViewController *ss = weakSelf;
+        if (ss) {
+            !ss.viewControllerWillDeallocBlock ?: ss.viewControllerWillDeallocBlock(ss);
+        }
     }];
     self.navigationController.interactivePopGestureRecognizer.delaysTouchesBegan = NO;
     self.tableView.delegate = self.chatViewModel;
@@ -983,9 +986,9 @@ NSString *const LCCKConversationViewControllerErrorDomain = @"LCCKConversationVi
 }
 
 - (void)updateStatusView {
-    if (!self.shouldCheckSessionStatus) {
-        return;
-    }
+//    if (!self.shouldCheckSessionStatus) {
+//        return;
+//    }
     BOOL isConnected = [LCCKSessionService sharedInstance].connect;
     if (isConnected) {
         self.clientStatusView.hidden = YES;

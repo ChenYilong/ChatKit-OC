@@ -81,9 +81,12 @@
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(messageStatusChanged:) name:LCCKNotificationMessageDelivered object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(backgroundImageChanged:) name:LCCKNotificationConversationViewControllerBackgroundImageDidChanged object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(refresh) name:LCCKNotificationSessionResumed object:nil];
-        __unsafe_unretained __typeof(self) weakSelf = self;
+        __weak __typeof(self) weakSelf = self;
         [self cyl_executeAtDealloc:^{
-            [[NSNotificationCenter defaultCenter] removeObserver:weakSelf];
+            id ss = weakSelf;
+            if (ss) {
+                [[NSNotificationCenter defaultCenter] removeObserver:ss];
+            }
         }];
     }
     return self;
@@ -595,13 +598,20 @@ fromTimestamp     |    toDate   |                |  上次上拉刷新顶端，�
 }
 
 - (void)sendLocalFeedbackTextMessge:(NSString *)localFeedbackTextMessge {
-    LCCKMessage *localFeedbackMessge = [LCCKMessage localFeedbackText:localFeedbackTextMessge];
-    [self appendMessagesToDataArrayTrailing:@[localFeedbackMessge]];
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.dataArray.count - 1 inSection:0];
-    dispatch_async(dispatch_get_main_queue(),^{
+    void (^operation)(void) = ^(void) {
+        LCCKMessage *localFeedbackMessge = [LCCKMessage localFeedbackText:localFeedbackTextMessge];
+        [self appendMessagesToDataArrayTrailing:@[localFeedbackMessge]];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.dataArray.count - 1 inSection:0];
         [self.parentConversationViewController.tableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
-        [self.parentConversationViewController scrollToBottomAnimated:YES];
-    });
+        [self.parentConversationViewController newScrollToBottomAnimated:YES];
+    };
+    if ([NSThread isMainThread]) {
+        operation();
+    } else {
+        dispatch_async(dispatch_get_main_queue(),^{
+            operation();
+        });
+    }
 }
 
 - (void)resendMessageForMessageCell:(LCCKChatMessageCell *)messageCell {
@@ -712,7 +722,6 @@ fromTimestamp     |    toDate   |                |  上次上拉刷新顶端，�
     NSUInteger newLastMessageCout = self.dataArray.count;
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.dataArray.count - 1 inSection:0];
     [self.delegate messageSendStateChanged:LCCKMessageSendStateSending withProgress:0.0f forIndex:indexPath.row];
-    LCCKLock();
     NSMutableArray *indexPaths = [NSMutableArray arrayWithObject:indexPath];
     NSUInteger additionItemsCount = newLastMessageCout - oldLastMessageCount;
     if (additionItemsCount > 1) {
@@ -721,12 +730,18 @@ fromTimestamp     |    toDate   |                |  上次上拉刷新顶端，�
             [indexPaths addObject:indexPath];
         }
     }
-    dispatch_async(dispatch_get_main_queue(),^{
+    void(^operation)(void) = ^(void) {
         [self.parentConversationViewController.tableView insertRowsAtIndexPaths:[indexPaths copy] withRowAnimation:UITableViewRowAnimationNone];
-        LCCKUnlock();
-        [self.parentConversationViewController scrollToBottomAnimated:YES];
+        [self.parentConversationViewController newScrollToBottomAnimated:YES];
         !callback ?: callback();
-    });
+    };
+    if (NSThread.isMainThread) {
+        operation();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            operation();
+        });
+    }
 }
 
 #pragma mark - Getters
