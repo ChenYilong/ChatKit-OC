@@ -120,6 +120,7 @@ static BOOL LCCKAllLogsEnabled;
     } else {
         //        NSLog(@"badge not changed");
     }
+    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 }
 
 - (void)setUseDevPushCerticate:(BOOL)useDevPushCerticate {
